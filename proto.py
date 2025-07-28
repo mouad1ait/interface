@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="Essilor Instruments", layout="wide")
 
 # --- LOGO ---
-st.image("https://github.com/mouad1ait/interface/blob/main/logo_essilor_instruments.png", width=150)
+st.image("logo_essilor_instruments.png", width=150)
 st.title("Application Essilor Instruments")
 st.write("Gestion des réclamations, réparations et qualité")
 
