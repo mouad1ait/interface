@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from datetime import datetime
+from io import BytesIO
 
 # --------------------------
 # Fonctions utilitaires
@@ -32,6 +33,14 @@ def ajouter_cle_primaire(df, col_modele, col_numero):
 def premiere_installation(df, col_cle, col_installation):
     """Récupère la première date d’installation pour chaque produit"""
     return df.groupby(col_cle)[col_installation].min().reset_index()
+
+def to_excel(df):
+    """Convertit un DataFrame en fichier Excel (mémoire)"""
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Données_nettoyées")
+    processed_data = output.getvalue()
+    return processed_data
 
 # --------------------------
 # Interface Streamlit
@@ -83,10 +92,11 @@ if uploaded_file:
         st.success("✅ Première date d’installation extraite")
         st.write(df_install.head())
 
-    # Téléchargement du fichier nettoyé
+    # Téléchargement du fichier nettoyé en Excel
+    excel_file = to_excel(df)
     st.download_button(
-        "📥 Télécharger le fichier nettoyé",
-        df.to_csv(index=False).encode("utf-8"),
-        "donnees_nettoyees.csv",
-        "text/csv"
+        label="📥 Télécharger le fichier nettoyé (Excel)",
+        data=excel_file,
+        file_name="donnees_nettoyees.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
