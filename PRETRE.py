@@ -19,7 +19,7 @@ def extraire_date_fabrication(numero):
     """Extrait la date de fabrication à partir du numéro de série (format mmaaxxx)."""
     try:
         mois = int(numero[:2])
-        annee = int("20" + numero[2:4])  # exemple : 25 -> 2025
+        annee = int("20" + numero[2:4])  # ex : '25' -> 2025
         return datetime(annee, mois, 1)
     except:
         return None
@@ -39,7 +39,7 @@ def premiere_installation(df, col_cle, col_installation):
 
 st.title("🧹 Nettoyage des données - Extraction SIS")
 
-uploaded_file = st.file_uploader("Importer un fichier Excel", type=["xlsx", "csv"])
+uploaded_file = st.file_uploader("Importer un fichier Excel ou CSV", type=["xlsx", "csv"])
 
 if uploaded_file:
     # Lecture du fichier
@@ -48,30 +48,38 @@ if uploaded_file:
     else:
         df = pd.read_excel(uploaded_file, dtype=str)
     
-    st.write("Aperçu des données importées :", df.head())
+    st.write("### 📊 Aperçu des données importées")
+    st.dataframe(df.head())
+
+    # Sélection des colonnes pour modèle et numéro de série
+    col_modele = st.selectbox("👉 Sélectionnez la colonne du modèle :", df.columns)
+    col_numero = st.selectbox("👉 Sélectionnez la colonne du numéro de série :", df.columns)
 
     # Sélection des colonnes de dates
-    colonnes_dates = st.multiselect("Sélectionnez les colonnes de dates à convertir :", df.columns)
-    if st.button("Convertir les dates"):
+    colonnes_dates = st.multiselect("👉 Sélectionnez les colonnes de dates à convertir :", df.columns)
+
+    # Conversion des dates
+    if st.button("🔄 Convertir les dates sélectionnées"):
         df = convertir_dates(df, colonnes_dates)
         st.success("✅ Dates converties avec succès")
-        st.write(df.head())
+        st.write(df[colonnes_dates].head())
 
     # Génération de la date de fabrication
-    if "numéro_de_série" in df.columns:
-        df["date_fabrication"] = df["numéro_de_série"].apply(extraire_date_fabrication)
-        st.success("✅ Date de fabrication extraite")
-        st.write(df[["numéro_de_série", "date_fabrication"]].head())
+    if col_numero:
+        df["date_fabrication"] = df[col_numero].apply(extraire_date_fabrication)
+        st.success("✅ Date de fabrication extraite à partir du numéro de série")
+        st.write(df[[col_numero, "date_fabrication"]].head())
 
     # Création de la clé produit
-    if "modèle" in df.columns and "numéro_de_série" in df.columns:
-        df = ajouter_cle_primaire(df, "modèle", "numéro_de_série")
+    if col_modele and col_numero:
+        df = ajouter_cle_primaire(df, col_modele, col_numero)
         st.success("✅ Clé produit générée")
-        st.write(df[["modèle", "numéro_de_série", "clé_produit"]].head())
+        st.write(df[[col_modele, col_numero, "clé_produit"]].head())
 
-    # Première installation
-    if "clé_produit" in df.columns and "date_installation" in df.columns:
-        df_install = premiere_installation(df, "clé_produit", "date_installation")
+    # Première installation (si date sélectionnée)
+    col_install = st.selectbox("👉 Sélectionnez la colonne de date d’installation (facultatif) :", [""] + list(df.columns))
+    if col_install and col_install != "":
+        df_install = premiere_installation(df, "clé_produit", col_install)
         st.success("✅ Première date d’installation extraite")
         st.write(df_install.head())
 
